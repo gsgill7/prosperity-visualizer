@@ -7,9 +7,12 @@ window.S = {
   cMode: 'prices', ov: { bid: false, mid: false, ask: false, orders: true },
   runs: {}, activeRun: null, comparing: new Set(),
   _runCounter: 0,
+  wallMidDist: null,
+  botOv: { bid: false, mid: false, ask: false, mine: true },
+  _bv: null,
 };
 
-const TABS = ['Time-Series', 'Volume Profile'];
+const TABS = ['Time-Series', 'Flow Analysis', 'Seasonality', 'Volume Profile', 'Stochastic', 'Microstructure', 'Bot Patterns', 'Imbalance'];
 const PC = { displayModeBar: false };
 const ICO = {
   t: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
@@ -228,12 +231,17 @@ function updateMet() {
     `<div class="mc"><div class="mc-i">${ICO.$}</div><div class="mc-l">Mid Price</div><div class="mc-v">${lm.toFixed(2)}</div><div class="mc-sub">Current</div></div>`;
 }
 
-// ─── Tab routing (only 2 tabs) ────────────────────────────────────────────────
-function rTab(i) { [window.t0, window.t3][i](); }
+// ─── Tab routing ─────────────────────────────────────────────────────────────
+function rTab(i) { [window.t0, window.t1, window.t2, window.t3, window.t4, window.t5, window.t6, window.t7][i](); }
 
 // ─── Price chart view mode / overlays ────────────────────────────────────────
 function setCM(m) { window.S.cMode = m; window.t0(); }
 function togOv(k)  { window.S.ov[k] = !window.S.ov[k]; window.t0(); }
+function setWMD(v) {
+  window.S.wallMidDist = window.S.wallMidDist === v ? null : v;
+  const i = window.S.tab;
+  if (i === 0) window.t0(); else if (i === 5) window.t5(); else if (i === 6) window.t6();
+}
 
 // ─── Keyboard shortcuts ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
@@ -262,4 +270,5 @@ window.delRun     = delRun;
 window.switchRun  = switchRun;
 window.setCM      = setCM;
 window.togOv      = togOv;
+window.setWMD     = setWMD;
 window.proc       = proc;
