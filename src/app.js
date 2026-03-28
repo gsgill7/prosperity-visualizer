@@ -299,7 +299,12 @@ async function postBacktest() {
 
     if (!resp.ok) {
       let msg = resp.statusText;
-      try { const e = await resp.json(); msg = e.error || msg; } catch (_) { /* ignore */ }
+      try {
+        const e = await resp.json();
+        msg = e.error || msg;
+        // Show traceback in console for debugging
+        if (e.detail) console.error('[backtest detail]\n' + e.detail);
+      } catch (_) { /* ignore */ }
       throw new Error(msg);
     }
 

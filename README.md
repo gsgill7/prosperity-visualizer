@@ -54,15 +54,20 @@ Drag `sample/demo.log` onto the page, or click **Upload New Logs**. Use the play
 ## In-Browser Backtest (Vercel deployment)
 
 ```
-1. Deploy to Vercel (see below)
-2. Click "Select trader.py" in the sidebar → choose your trader file
-3. Pick days (Round 0 Day -1 and/or Day -2 are bundled)
-4. Click "Run Backtest"
+1. Go to the live demo  →  prosperity-visualizer.vercel.app
+2. Click "Select trader.py" in the sidebar
+3. Choose demo_trader.py from this repo (or your own trader)
+4. Pick Round 0 days (-1 and/or -2)
+5. Click "Run Backtest" — results load in ~3 s
 ```
 
-The Vercel serverless function (`api/backtest.py`) executes your `Trader` class against bundled market data, serializes the result in the standard `.log` format, and returns it for the frontend parser to ingest. No data leaves your browser except the code you upload.
+`demo_trader.py` is a ready-to-run market-making strategy for EMERALDS and TOMATOES that populates all 8 dashboard tabs, including the Microstructure and Imbalance views via `SIG` signal logging.
 
-> **Note:** Only Round 0 data is bundled in the hosted version. For other rounds, run the backtester locally and upload the `.log` file.
+The Vercel serverless function (`api/backtest.py`) executes your `Trader` class against bundled market data, serializes the result as a `.log` file, and streams it back to the browser. The frontend parser handles it identically to a manually uploaded file.
+
+> **Note:** Only Round 0 data is bundled on the server. For rounds 1–5, run the backtester locally and drag the resulting `.log` onto the page.
+>
+> **Import restrictions:** The serverless environment only has access to the Python standard library and `datamodel`. Traders that import `numpy`, `pandas`, or custom modules should be run locally.
 
 ---
 
