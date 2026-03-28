@@ -91,9 +91,10 @@ input[type=file]{display:none}
 .vc{display:inline-block;padding:3px 8px;border-radius:12px;font-size:9px;font-weight:700;cursor:pointer;border:1px solid var(--brd);color:var(--t3);background:transparent;text-transform:uppercase;letter-spacing:0.04em}.vc.on{background:var(--bg4);color:var(--t1);border-color:var(--brd2)}.vc:hover:not(.on){border-color:var(--bg4);color:var(--t2)}
 /* Backtest panel */
 .bt-panel{display:flex;flex-direction:column;gap:6px}
-.bt-h{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px}
-.bt-upload{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--brd);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:11px;color:var(--t2);transition:border-color .15s}.bt-upload:hover{border-color:var(--brd2);color:var(--t1)}.bt-upload svg{width:13px;height:13px;flex-shrink:0;color:var(--t3)}.bt-fname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
-.bt-run{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--blue);color:#fff;border-radius:6px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:opacity .15s}.bt-run:hover{opacity:.85}.bt-run svg{width:12px;height:12px}
+.bt-upload{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--brd);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:11px;color:var(--t2);transition:border-color .15s}.bt-upload:hover{border-color:var(--brd2);color:var(--t1)}.bt-upload svg{width:13px;height:13px;flex-shrink:0;color:var(--t3)}.bt-fname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.bt-or{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--t3)}.bt-or::before,.bt-or::after{content:'';flex:1;height:1px;background:var(--brd)}
+.bt-demo{display:flex;align-items:center;justify-content:center;gap:5px;background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(168,85,247,0.15));border:1px solid rgba(59,130,246,0.35);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--t0);transition:all .15s}.bt-demo:hover{border-color:var(--blue);background:linear-gradient(135deg,rgba(59,130,246,0.25),rgba(168,85,247,0.25))}.bt-demo svg{width:13px;height:13px;color:#f59e0b}
+.bt-run{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--blue);color:#fff;border-radius:6px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:opacity .15s;margin-top:2px}.bt-run:hover{opacity:.85}.bt-run svg{width:12px;height:12px}
 .bt-merge{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:var(--t2);padding:2px 0;user-select:none}.bt-merge-b{width:13px;height:13px;border:1.5px solid var(--brd2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;flex-shrink:0}.bt-merge.on .bt-merge-b{border-color:var(--blue);background:var(--blue);color:#fff}
 .bt-note{font-size:9px;color:var(--t3);line-height:1.4}
 @media(max-width:960px){.g2{grid-template-columns:1fr}.g2r{display:none}.met{grid-template-columns:repeat(3,1fr)}.tk-cards{grid-template-columns:1fr}}
@@ -107,16 +108,18 @@ input[type=file]{display:none}
   <div class="sb-s" id="sp" style="display:none"><div class="sb-l2"><span>Products</span></div><div id="pl"></div></div>
   <div class="sb-s" id="so" style="display:none"><div class="sb-l">Display</div><div class="tg" id="tn" onclick="togN()"><div class="tg-b">&#x2713;</div><span>NPC market flow</span></div></div>
   <div class="sb-s"><div class="sb-l">Backtest</div><div class="bt-panel">
+    <div class="bt-demo" onclick="useDemoTrader()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Use Demo Trader</div>
+    <div class="bt-or">or upload your own</div>
     <div class="bt-upload" onclick="document.getElementById('bfi').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg><span class="bt-fname" id="bt-fname">Select trader.py</span></div>
     <input type="file" id="bfi" accept=".py" onchange="btSelFile(this.files[0])">
-    <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px">Round 0 Data</div>
+    <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;margin-top:6px">Round 0 Data</div>
     <div class="pill-row" style="margin-bottom:4px">
       <div class="pill on" id="btd-0--1" onclick="btTogDay('0--1')">Day &minus;1</div>
       <div class="pill on" id="btd-0--2" onclick="btTogDay('0--2')">Day &minus;2</div>
     </div>
     <div class="bt-merge" id="bt-merge" onclick="btTogMerge()"><div class="bt-merge-b" id="bt-merge-b">&#x2713;</div>Merge PnL across days</div>
     <div class="bt-run" onclick="postBacktest()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run Backtest</div>
-    <div class="bt-note">Runs your Trader class against bundled Round 0 market data and loads the result directly into the visualizer. Try <strong>demo_trader.py</strong> from the repo to see all 8 tabs populated.</div>
+    <div class="bt-note">Click <strong>Use Demo Trader</strong> then <strong>Run Backtest</strong> to instantly see all 8 tabs populated — no Python install needed.</div>
   </div></div>
 </div>
 <div class="mn">

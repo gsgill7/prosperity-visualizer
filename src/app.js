@@ -257,6 +257,26 @@ document.addEventListener('keydown', e => {
 });
 
 // ─── Backtest panel ───────────────────────────────────────────────────────────
+async function useDemoTrader() {
+  try {
+    const resp = await fetch('/demo_trader.py');
+    if (!resp.ok) throw new Error('Could not load demo_trader.py');
+    const text = await resp.text();
+    const file = new File([text], 'demo_trader.py', { type: 'text/x-python' });
+    btSelFile(file);
+    // Auto-select both days and enable merge for best demo experience
+    const S = window.S;
+    S.btDays = new Set(['0--1', '0--2']);
+    ['0--1', '0--2'].forEach(d => {
+      const el = document.getElementById('btd-' + d);
+      if (el) el.classList.add('on');
+    });
+    if (!S.btMerge) btTogMerge();
+  } catch (err) {
+    alert('Failed to load demo trader: ' + err.message);
+  }
+}
+
 function btSelFile(file) {
   if (!file) return;
   window.S.btFile = file;
@@ -348,6 +368,7 @@ window.setCM      = setCM;
 window.togOv      = togOv;
 window.setWMD     = setWMD;
 window.proc       = proc;
+window.useDemoTrader = useDemoTrader;
 window.btSelFile  = btSelFile;
 window.btTogDay   = btTogDay;
 window.btTogMerge = btTogMerge;

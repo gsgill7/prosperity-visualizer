@@ -5,11 +5,8 @@ Accepts:
     { "trader_code": str, "days": ["0--1", "0--2"], "merge_pnl": bool }
 
 Returns:
-    200 text/plain  — log file content (Sandbox logs / Activities log / Trade History)
+    200 text/plain  — log file content (Sandbox / Activities / Trade History)
     400 application/json — { "error": "...", "detail": "<traceback>" }
-
-The returned log is in the exact .log format that the frontend parseFile() already
-understands — no changes to the parser needed.
 """
 
 import io
@@ -22,38 +19,45 @@ import importlib.util
 from collections import defaultdict
 from functools import reduce
 from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
-# api/backtest.py lives one level below the repo root
-_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+# ── Resolve repo root from this file's location ───────────────────────────────
+# api/backtest.py  →  parent = repo root
+_API_DIR = os.path.dirname(os.path.abspath(__file__))
+_ROOT    = os.path.normpath(os.path.join(_API_DIR, ".."))
+_BT_DIR  = os.path.join(_ROOT, "backtester")
 
-# 1. Repo root — so traders can `from datamodel import ...`
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+# Add to sys.path so imports work:
+#   _ROOT    → `from datamodel import ...`  (root-level datamodel.py)
+#   _BT_DIR  → `from prosperity4bt.xxx import ...`
+for p in (_ROOT, _BT_DIR):
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
-# 2. backtester/ — so `from prosperity4bt.runner import ...` works
-_BT = os.path.join(_ROOT, "backtester")
-if _BT not in sys.path:
-    sys.path.insert(0, _BT)
-
-from prosperity4bt.runner import run_backtest                    # noqa: E402
-from prosperity4bt.file_reader import PackageResourcesReader     # noqa: E402
+from prosperity4bt.runner import run_backtest                     # noqa: E402
+from prosperity4bt.file_reader import FileSystemReader            # noqa: E402
 from prosperity4bt.models import BacktestResult, TradeMatchingMode  # noqa: E402
 
+# Use FileSystemReader with a concrete path — much more reliable in serverless
+# than PackageResourcesReader (which depends on importlib.resources pkg lookup)
+_RESOURCES = Path(_BT_DIR) / "prosperity4bt" / "resources"
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+
+# ── Day parsing ───────────────────────────────────────────────────────────────
 
 def _parse_day(spec: str) -> tuple[int, int]:
-    """'0--1' → (0, -1);  '0--2' → (0, -2);  '0-1' → (0, 1)"""
+    """'0--1' → (0, -1),  '0--2' → (0, -2),  '0-1' → (0, 1)"""
     round_str, day_str = spec.split("-", 1)
     return int(round_str), int(day_str)
 
 
+# ── Result merging (mirrors __main__.merge_results) ───────────────────────────
+
 def _merge(a: BacktestResult, b: BacktestResult, merge_pnl: bool) -> BacktestResult:
-    a_last_ts   = a.activity_logs[-1].timestamp
-    ts_offset   = a_last_ts + 100
-    sandbox     = a.sandbox_logs[:] + [r.with_offset(ts_offset) for r in b.sandbox_logs]
-    trades      = a.trades[:]       + [r.with_offset(ts_offset) for r in b.trades]
+    a_last_ts = a.activity_logs[-1].timestamp
+    ts_offset = a_last_ts + 100
+    sandbox   = a.sandbox_logs[:] + [r.with_offset(ts_offset) for r in b.sandbox_logs]
+    trades    = a.trades[:]       + [r.with_offset(ts_offset) for r in b.trades]
     if merge_pnl:
         pnl_off: dict[str, float] = defaultdict(float)
         for row in reversed(a.activity_logs):
@@ -68,8 +72,9 @@ def _merge(a: BacktestResult, b: BacktestResult, merge_pnl: bool) -> BacktestRes
     return BacktestResult(a.round_num, a.day_num, sandbox, act, trades)
 
 
+# ── Serialise to .log format (mirrors __main__.write_output) ──────────────────
+
 def _serialize(result: BacktestResult) -> str:
-    """Replicates write_output() from __main__.py, capturing to a string."""
     buf = io.StringIO()
     buf.write("Sandbox logs:\n")
     for row in result.sandbox_logs:
@@ -92,7 +97,7 @@ def _serialize(result: BacktestResult) -> str:
 
 class handler(BaseHTTPRequestHandler):
     def log_message(self, *_args):
-        pass
+        pass  # suppress stdout noise in Vercel logs
 
     def _cors(self, status: int = 200) -> None:
         self.send_response(status)
@@ -107,26 +112,24 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         trader_path: str | None = None
         try:
-            length = int(self.headers.get("Content-Length", 0))
-            body   = json.loads(self.rfile.read(length))
-
-            trader_code: str       = body.get("trader_code", "").strip()
-            days:        list[str] = body.get("days", ["0--1"])
-            merge_pnl:   bool      = bool(body.get("merge_pnl", False))
+            length       = int(self.headers.get("Content-Length", 0))
+            body         = json.loads(self.rfile.read(length))
+            trader_code  = body.get("trader_code", "").strip()
+            days         = body.get("days", ["0--1"])
+            merge_pnl    = bool(body.get("merge_pnl", False))
 
             if not trader_code:
-                raise ValueError("trader_code is empty — select a .py file first")
+                raise ValueError("No trader code received — select a .py file first")
             if not days:
                 raise ValueError("Select at least one day to backtest")
 
-            # ── Write trader code to /tmp ────────────────────────────────────
+            # ── Write trader to /tmp ─────────────────────────────────────────
             uid         = uuid.uuid4().hex
             trader_path = f"/tmp/trader_{uid}.py"
             with open(trader_path, "w", encoding="utf-8") as fh:
                 fh.write(trader_code)
 
-            # Add /tmp to path so the trader can find its own file (covers
-            # edge cases where the trader does relative imports)
+            # Make /tmp importable (helps if trader does relative imports)
             if "/tmp" not in sys.path:
                 sys.path.insert(0, "/tmp")
 
@@ -135,23 +138,27 @@ class handler(BaseHTTPRequestHandler):
             mod  = importlib.util.module_from_spec(spec)
             try:
                 spec.loader.exec_module(mod)   # type: ignore[union-attr]
-            except ImportError as e:
+            except ImportError as exc:
                 raise ImportError(
-                    f"Import error in your trader: {e}\n\n"
-                    "Only the standard library and 'datamodel' are available on the server. "
-                    "If your trader imports numpy/pandas/custom modules, run the backtester "
-                    "locally and upload the resulting .log file instead."
-                ) from e
+                    f"Import error in your trader: {exc}\n\n"
+                    "The server only has access to the Python standard library and "
+                    "'datamodel'. If your trader uses numpy, pandas, or custom modules, "
+                    "run the backtester locally and upload the .log file instead."
+                ) from exc
 
             if not hasattr(mod, "Trader"):
-                raise ValueError(
-                    "trader.py must define a class named 'Trader' with a run() method"
+                raise ValueError("Your file must define a class named 'Trader'")
+
+            # ── Sanity-check data path ───────────────────────────────────────
+            if not _RESOURCES.is_dir():
+                raise RuntimeError(
+                    f"Data directory not found at {_RESOURCES}. "
+                    "This is a server configuration issue."
                 )
 
-            # ── Run backtest for each requested day ──────────────────────────
-            file_reader = PackageResourcesReader()
+            # ── Run backtest ─────────────────────────────────────────────────
+            file_reader = FileSystemReader(_RESOURCES)
             results: list[BacktestResult] = []
-
             for day_spec in sorted(days):
                 rnd, day = _parse_day(day_spec)
                 results.append(run_backtest(
@@ -166,7 +173,7 @@ class handler(BaseHTTPRequestHandler):
                 ))
 
             if not results:
-                raise ValueError("No results produced — check the day specification")
+                raise ValueError("No results — check your day selection")
 
             merged  = reduce(lambda a, b: _merge(a, b, merge_pnl), results)
             payload = _serialize(merged).encode("utf-8")
@@ -177,9 +184,10 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
 
-        except Exception as exc:
+        except Exception:
             tb  = traceback.format_exc()
-            err = json.dumps({"error": str(exc), "detail": tb}).encode("utf-8")
+            msg = tb.strip().splitlines()[-1]   # last line = the actual exception
+            err = json.dumps({"error": msg, "detail": tb}).encode("utf-8")
             self._cors(400)
             self.send_header("Content-Type",   "application/json")
             self.send_header("Content-Length", str(len(err)))
