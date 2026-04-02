@@ -12,7 +12,7 @@ Upload a backtest log to scrub through every tick and analyse market microstruct
 
 | Tab | Description |
 |-----|-------------|
-| **Time-Series** | Candlestick price chart with own-trade overlays and signal annotations (fair value, EMA, bid/ask walls). Tick-scrubber replays the full L2 order book snapshot at any timestamp. Supports multi-run PnL comparison. |
+| **Time-Series** | Candlestick price chart with own-trade overlays and signal annotations (fair value, EMA, wall mid). Toggleable overlays for Bid, Ask, Mid, Orders, and BB Bands (auto-detected when `bb_mid`/`bb_upper`/`bb_lower` SIG signals are present). Tick-scrubber replays the full L2 order book snapshot at any timestamp. Supports multi-run PnL comparison. |
 | **Flow Analysis** | NPC lot-size distribution. Identifies which market-making bots are active based on their deterministic order sizes. |
 | **Seasonality** | Mid-price by intra-day timestamp, split across multiple days. Surfaces recurring intra-day price patterns. |
 | **Volume Profile** | Price-volume histogram of own fills. Shows where execution is concentrated relative to the price distribution. |
@@ -75,7 +75,18 @@ To unlock the Microstructure and Imbalance tabs, emit structured signal lines fr
 print(f"SIG|{product}|fair_value={fair:.1f}|bid_wall={bid}|ask_wall={ask}|obi={obi:.3f}")
 ```
 
-The parser reads `SIG|SYMBOL|key=value|...` lines from the lambda log. Supported keys: `wall_mid`, `bid_wall`, `ask_wall`, `fair_value`, `ema`, `obi`, `tape_vel`, `position`.
+The parser reads `SIG|SYMBOL|key=value|...` lines from the lambda log. Supported keys:
+
+| Key | Effect |
+|-----|--------|
+| `wall_mid` | Always-on white dashed line — primary fair value anchor |
+| `bid_wall` | Teal line, shown when **Bid** overlay is toggled on |
+| `ask_wall` | Red line, shown when **Ask** overlay is toggled on |
+| `fair_value` | Blue line |
+| `ema` | Orange dotted line |
+| `obi`, `tape_vel`, `position` | Microstructure / Imbalance tabs |
+| `bb_mid` | Purple dotted midline — shown when **BB Bands** toggle is on |
+| `bb_upper`, `bb_lower` | Purple shaded Bollinger Band — shown when **BB Bands** toggle is on; toggle auto-appears when these signals are detected |
 
 ---
 
