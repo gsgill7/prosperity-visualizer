@@ -182,6 +182,15 @@ function t0() {
         if (!d.signals[k]) return;
         tr.push({ x: d.signals[k].map(p => p[0]), y: d.signals[k].map(p => p[1]), name: k, type: 'scattergl', mode: 'lines', line: sty[k] || { color: C.dim, width: 1 } });
       });
+
+      // Bollinger Band overlay — auto-detected if bb_upper/bb_lower signals present
+      if (d.signals.bb_lower && d.signals.bb_upper) {
+        tr.push({ x: d.signals.bb_lower.map(p => p[0]), y: d.signals.bb_lower.map(p => p[1]), name: 'BB Lower', type: 'scatter', mode: 'lines', line: { color: 'rgba(168,85,247,0.5)', width: 1 }, showlegend: false, hoverinfo: 'skip' });
+        tr.push({ x: d.signals.bb_upper.map(p => p[0]), y: d.signals.bb_upper.map(p => p[1]), name: 'BB Band',  type: 'scatter', mode: 'lines', line: { color: 'rgba(168,85,247,0.5)', width: 1 }, fill: 'tonexty', fillcolor: 'rgba(168,85,247,0.07)' });
+      }
+      if (d.signals.bb_mid) {
+        tr.push({ x: d.signals.bb_mid.map(p => p[0]), y: d.signals.bb_mid.map(p => p[1]), name: 'BB Mid', type: 'scattergl', mode: 'lines', line: { color: C.purple, width: 1.5, dash: 'dot' } });
+      }
     }
 
     // Own trades grouped by counterparty
