@@ -1,4 +1,5 @@
 # Prosperity Visualizer
+this should only be for us hopefully
 
 A tick-level L2 order book replay and analytics dashboard for the [IMC Prosperity](https://prosperity.imc.com/) algorithmic trading competition.
 
