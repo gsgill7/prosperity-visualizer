@@ -125,7 +125,14 @@ button:focus-visible,input:focus-visible,.tab:focus-visible,.pill:focus-visible,
       <div class="pill on" id="btd-0--1" onclick="btTogDay('0--1')">Day &minus;1</div>
       <div class="pill on" id="btd-0--2" onclick="btTogDay('0--2')">Day &minus;2</div>
     </div>
-    <div class="bt-merge" id="bt-merge" onclick="btTogMerge()"><div class="bt-merge-b" id="bt-merge-b">&#x2713;</div>Merge PnL across days</div>
+    
+      <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;margin-top:6px">Round 1 Data</div>
+      <div class="pill-row" style="margin-bottom:4px">
+        <div class="pill on" id="btd-1--2" onclick="btTogDay('1--2')">Day &minus;2</div>
+        <div class="pill on" id="btd-1--1" onclick="btTogDay('1--1')">Day &minus;1</div>
+        <div class="pill on" id="btd-1-0" onclick="btTogDay('1-0')">Day 0</div>
+      </div>
+      <div class="bt-merge" id="bt-merge" onclick="btTogMerge()"><div class="bt-merge-b" id="bt-merge-b">&#x2713;</div>Merge PnL across days</div>
     <div class="bt-run" onclick="postBacktest()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run Backtest</div>
     <div class="bt-note">Click <strong>Use Demo Trader</strong> then <strong>Run Backtest</strong> to instantly see all 8 tabs populated — no Python install needed.</div>
   </div></div>

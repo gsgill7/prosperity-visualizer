@@ -12,7 +12,7 @@ window.S = {
   _bv: null,
   // Backtest panel state
   btFile: null,
-  btDays: new Set(['0--1', '0--2']),
+  btDays: new Set(["0--1", "0--2", "1--2", "1--1", "1-0"]),
   btMerge: false,
 };
 
@@ -267,7 +267,7 @@ async function useDemoTrader() {
     btSelFile(file);
     // Auto-select both days and enable merge for best demo experience
     const S = window.S;
-    S.btDays = new Set(['0--1', '0--2']);
+    S.btDays = new Set(['0--1', '0--2', '1--2', '1--1', '1-0']);
     ['0--1', '0--2'].forEach(d => {
       const el = document.getElementById('btd-' + d);
       if (el) el.classList.add('on');
