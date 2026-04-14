@@ -271,6 +271,7 @@ function build(entries, th) {
     for (const sym of syms) {
       const dep = (entry.order_depths || {})[sym];
       let mid = entry.mid !== undefined ? entry.mid : null;
+        if (mid === 0 || mid === 0.0 || mid === "0.0" || mid === "0") mid = null;
       let bids = [], asks = [];
       if (Array.isArray(dep) && dep.length >= 2) {
         const [bu, se] = dep;
