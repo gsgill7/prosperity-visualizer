@@ -335,17 +335,44 @@ function t3() {
 function t4() {
   const d = window.S.data[window.S.prod], st = d.stochastic, el = document.getElementById('p4');
   if (!st || st.hurst === null) { el.innerHTML = '<div class="note">Need 100+ ticks.</div>'; return; }
-  let h = `<div class="sr"><div class="mc"><div class="mc-l">Hurst</div><div class="mc-v">${st.hurst}</div><div class="mc-sub">${st.hurst_label}</div></div><div class="card" style="padding:0"><div id="c4h" style="height:100%"></div></div></div>`;
-  if (st.fft_periods && st.fft_periods.length) h += '<div class="card"><div class="card-t" style="margin-bottom:8px">Fourier Transform</div><div id="c4f"></div></div>';
-  el.innerHTML = h;
-  if (st.log_returns && st.log_returns.length)
-    Plotly.newPlot('c4h', [{ x: st.log_returns, type: 'histogram', nbinsx: 60, marker: { color: C.blue } }], BL(130, { margin: { l: 30, r: 10, t: 4, b: 24 }, xaxis: { gridcolor: GR }, yaxis: { gridcolor: GR }, showlegend: false }), PC);
+  
+  let h = `<div class="sr" style="align-items: stretch; gap: 16px;">
+    <div class="mc" style="flex: 1; padding: 16px; display: flex; flex-direction: column; justify-content: center;">
+      <div class="mc-l">Hurst Exponent</div>
+      <div class="mc-v" style="font-size: 28px; margin-bottom: 8px;">${st.hurst}</div>
+      <div class="mc-sub" style="font-weight: bold; color: var(--t1); margin-bottom: 4px;">${st.hurst_label}</div>
+      <div style="font-size: 11px; color: var(--t3); line-height: 1.5;">${st.hurst_desc}</div>
+    </div>`;
+  
+  if (st.log_returns && st.log_returns.length) {
+    h += `<div class="card" style="flex: 2; margin: 0; padding: 16px;">
+      <div class="card-t" style="margin-bottom:8px">Log Returns Distribution</div>
+      <div style="font-size: 11px; color: var(--t3); margin-bottom: 12px;">Look for "Fat Tails". A normal bell curve means pure random walk. Long tails mean the price experiences sudden, exploitable jumps or regimes.</div>
+      <div id="c4h" style="height:120px"></div>
+    </div>`;
+  }
+  
+  h += `</div>`; // Close .sr
+
   if (st.fft_periods && st.fft_periods.length) {
-    const ann = st.dominant_period ? [{ x: Math.log10(st.dominant_period), y: Math.max(...st.fft_amplitudes), text: st.dominant_period + ' ticks', showarrow: true, arrowhead: 1, ax: 40, ay: -30, font: { color: C.blue, size: 10 }, arrowcolor: C.blue }] : [];
-    Plotly.newPlot('c4f', [{ x: st.fft_periods, y: st.fft_amplitudes, type: 'scattergl', mode: 'lines', line: { color: C.gold, width: 1 } }], BL(280, { xaxis: { type: 'log', gridcolor: GR }, yaxis: { gridcolor: GR }, annotations: ann }), PC);
+    h += `<div class="card" style="margin-top: 16px;">
+      <div class="card-t" style="margin-bottom:4px">Fast Fourier Transform (FFT) - Dominant Rhythms</div>
+      <div style="font-size: 11px; color: var(--t3); margin-bottom: 16px; max-width: 800px; line-height: 1.5;">The FFT detects hidden cyclical "heartbeats" in the engine. Huge spikes indicate a repeating bot pattern (e.g., an NPC trading exactly every X ticks). If you see a dominant spike at 50 ticks, you should configure your moving averages (EMA/SMA) or signal windows to exactly 50 (or 25) ticks for perfect resonance.</div>
+      <div id="c4f"></div>
+    </div>`;
+  }
+  
+  el.innerHTML = h;
+  
+  if (st.log_returns && st.log_returns.length) {
+    Plotly.newPlot('c4h', [{ x: st.log_returns, type: 'histogram', nbinsx: 60, marker: { color: C.blue } }], BL(120, { margin: { l: 30, r: 10, t: 4, b: 24 }, xaxis: { gridcolor: GR }, yaxis: { gridcolor: GR }, showlegend: false }), PC);
+  }
+  
+  if (st.fft_periods && st.fft_periods.length) {
+    const ann = st.dominant_period ? [{ x: Math.log10(st.dominant_period), y: Math.max(...st.fft_amplitudes), text: 'DOMINANT: ' + st.dominant_period + ' TICKS', showarrow: true, arrowhead: 1, ax: 40, ay: -30, font: { color: C.gold, size: 10, weight: 'bold' }, arrowcolor: C.gold }] : [];
+    Plotly.newPlot('c4f', [{ x: st.fft_periods, y: st.fft_amplitudes, type: 'scattergl', mode: 'lines', line: { color: C.blue, width: 1.5 } }], BL(280, { xaxis: { type: 'log', gridcolor: GR, title: { text: 'Period length (Log Ticks)', font: { size: 10, color: 'var(--t3)' } } }, yaxis: { gridcolor: GR, title: { text: 'Amplitude (Signal Strength)', font: { size: 10, color: 'var(--t3)' } } }, annotations: ann }), PC);
   }
 }
-
 // ─── T5: Microstructure — engine walls vs executions ─────────────────────────
 function t5() {
   const S = window.S;
